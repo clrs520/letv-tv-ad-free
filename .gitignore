@@ -1,3 +1,4 @@
 bin/
 *.idsig
 *.unsigned.apk
+javac_out.txt
