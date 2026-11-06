@@ -1,11 +1,6 @@
 package com.clrs520.puresource;
 
 import android.app.Activity;
-import android.graphics.Color;
-import android.graphics.drawable.GradientDrawable;
-import android.graphics.drawable.StateListDrawable;
-import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.widget.Button;
@@ -13,29 +8,24 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-/**
- * 纯净信号源 v2 — 无广告的电视信号源切换器 (LeTV EUI / Mstar).
- *
- * 切换机制: EUI 导出的 eui.intent.action.NEXT_SOURCE 广播(由信号源应用的
- * SignalGlobalReceiver 处理, 无权限门槛, 每次切到下一个输入源, 仅极简源名提示)。
- *
- * 当前源由本 app 自行跟踪(SharedPreferences): 首次使用点一次"我在看XX"校准,
- * 之后所有切换都经过本 app, 状态永不漂移。
- */
+/** 纯净信号源 v3 — 直连 Mstar API 的信号源切换器 (LeTV EUI).
+ *  移植信号源应用自带的 com.stv.signalcommon 客户端类(classes2.dex),
+ *  经 CommonDesk.SetInputSource 直接切换, 绕开乐视桌面管理器与广告面板. */
 public class MainActivity extends Activity {
 
-    /** 轮播序(实测: 模拟电视 → 视频 → HDMI1 → HDMI2 → 数字电视 → 模拟电视…) */
-    private static final String[] CYCLE = {"HDMI 1", "HDMI 2", "数字电视", "模拟电视", "视频 (AV)"};
+    private static final String[] PORTS = {
+        "HDMI 1", "HDMI 2", "HDMI 3", "Digital TV", "Analog TV", "Composite", "VGA", "YPBPR"
+    };
+    private static final String[] LABELS = {
+        "HDMI 1", "HDMI 2", "HDMI 3", "数字电视", "模拟电视", "视频 (AV)", "VGA", "YPBPR"
+    };
 
-    private SharedPreferences prefs;
     private TextView status;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setRequestedOrientation(0); // landscape
-        prefs = getSharedPreferences("puresource", MODE_PRIVATE);
-
+        setRequestedOrientation(0);
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(0xFF12161D);
@@ -51,14 +41,11 @@ public class MainActivity extends Activity {
 
         status = new TextView(this);
         status.setTextColor(0xFF9AA0A6);
-        status.setTextSize(16);
+        status.setTextSize(15);
         status.setPadding(0, 0, 0, dp(14));
         root.addView(status);
 
-        addButton(root, "下一个信号源", -1);
-        for (int i = 0; i < CYCLE.length; i++) {
-            addButton(root, CYCLE[i], i);
-        }
+        for (int i = 0; i < PORTS.length; i++) addButton(root, LABELS[i], PORTS[i]);
         setContentView(root);
         refreshStatus();
     }
@@ -67,51 +54,17 @@ public class MainActivity extends Activity {
         return (int) (getResources().getDisplayMetrics().density * v);
     }
 
-    private int curIdx() {
-        return prefs.getInt("curIdx", -1);
-    }
-
-    private void setCurIdx(int i) {
-        prefs.edit().putInt("curIdx", i).apply();
-        refreshStatus();
-    }
-
-    private void refreshStatus() {
-        int i = curIdx();
-        status.setText(i < 0 ? "当前源: 未知 — 点一次你正在看的源完成校准"
-                             : "当前源: " + CYCLE[i]);
-    }
-
-    /** 焦点态高对比: 聚焦=亮蓝底+白描边+▶前缀, 保证遥控器焦点一目了然 */
-    private StateListDrawable btnBg() {
-        GradientDrawable normal = new GradientDrawable();
-        normal.setColor(0xFF232830);
-        normal.setCornerRadius(dp(8));
-        GradientDrawable focused = new GradientDrawable();
-        focused.setColor(0xFF2E7DFF);
-        focused.setCornerRadius(dp(8));
-        focused.setStroke(dp(3), 0xFFFFFFFF);
-        GradientDrawable pressed = new GradientDrawable();
-        pressed.setColor(0xFF1B5EDB);
-        pressed.setCornerRadius(dp(8));
-        StateListDrawable sld = new StateListDrawable();
-        sld.addState(new int[]{android.R.attr.state_focused}, focused);
-        sld.addState(new int[]{android.R.attr.state_pressed}, pressed);
-        sld.addState(new int[]{}, normal);
-        return sld;
-    }
-
-    private void addButton(LinearLayout root, final String label, final int target) {
+    private void addButton(LinearLayout root, final String label, final String port) {
         Button b = new Button(this);
         b.setText(label);
         b.setTextSize(20);
         b.setAllCaps(false);
         b.setTextColor(0xFFCFCFCF);
-        b.setBackground(btnBg());
+        b.setBackgroundResource(android.R.drawable.screen_background_dark_transparent);
         b.setPadding(dp(16), dp(12), dp(16), dp(12));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dp(64));
-        lp.topMargin = dp(10);
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(56));
+        lp.topMargin = dp(8);
         b.setLayoutParams(lp);
         b.setOnFocusChangeListener(new android.view.View.OnFocusChangeListener() {
             public void onFocusChange(android.view.View v, boolean hasFocus) {
@@ -121,53 +74,84 @@ public class MainActivity extends Activity {
             }
         });
         b.setOnClickListener(new android.view.View.OnClickListener() {
-            public void onClick(android.view.View v) { go(label, target); }
+            public void onClick(android.view.View v) { switchTo(port, label); }
         });
         root.addView(b);
     }
 
-    private void go(final String label, final int target) {
-        int cur = curIdx();
-        if (target < 0) {                       // 下一个
-            cycle();
-            if (cur >= 0) setCurIdx((cur + 1) % CYCLE.length);
-            toast("已切换");
-            return;
-        }
-        if (cur < 0) {                          // 校准
-            setCurIdx(target);
-            toast("已校准当前源为 " + CYCLE[target]);
-            return;
-        }
-        if (cur == target) { toast("已经在 " + CYCLE[target]); return; }
-        final int steps = (target - cur + CYCLE.length) % CYCLE.length;
+    private void switchTo(final String port, final String label) {
         new Thread(new Runnable() {
             public void run() {
-                for (int i = 0; i < steps; i++) {
-                    cycle();
-                    try { Thread.sleep(1600); } catch (InterruptedException ignored) {}
-                }
-                runOnUiThread(new Runnable() {
-                    public void run() {
-                        setCurIdx(target);
-                        toast("已切换到 " + CYCLE[target]);
-                    }
-                });
+                android.os.Looper.prepare();
+                ui("正在切换到 " + label + "…");
+                String r = doSwitch(port);
+                ui((r.equals("OK") ? "已切换到 " + label : "失败 " + r));
             }
         }).start();
     }
 
-    private void cycle() {
-        sendBroadcast(new Intent("eui.intent.action.NEXT_SOURCE"));
+    private String doSwitch(String port) {
+        try {
+            Class<?> sm = Class.forName("com.stv.signalcommon.SignalManager");
+            Object mgr = sm.getMethod("getInstance", android.content.Context.class)
+                           .invoke(null, this);
+            sm.getMethod("switchPort", String.class).invoke(mgr, port);
+            refreshStatusAsync();
+            return "OK";
+        } catch (Throwable t) {
+            return chain(t);
+        }
     }
 
-    private void toast(String msg) {
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+    private String queryPort() {
+        try {
+            Class<?> sm = Class.forName("com.stv.signalcommon.SignalManager");
+            Object mgr = sm.getMethod("getInstance", android.content.Context.class)
+                           .invoke(null, this);
+            return (String) sm.getMethod("getCurrentPortString").invoke(mgr);
+        } catch (Throwable t) {
+            return chain(t);
+        }
+    }
+
+    private void refreshStatusAsync() {
+        runOnUiThread(new Runnable() {
+            public void run() { refreshStatus(); }
+        });
+    }
+
+    private void ui(final String msg) {
+        runOnUiThread(new Runnable() {
+            public void run() {
+                Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
+                status.setText(msg);
+            }
+        });
+    }
+
+    private static String chain(Throwable t) {
+        StringBuilder sb = new StringBuilder();
+        Throwable c = t;
+        int n = 0;
+        while (c != null && n < 4) {
+            sb.append("[").append(n).append("] ").append(c.getClass().getSimpleName())
+              .append("(").append(c.getMessage()).append(")");
+            if (n == 0 && c.getStackTrace().length > 0)
+                sb.append("@").append(c.getStackTrace()[0].toString());
+            c = c.getCause();
+            n++;
+            if (c != null) sb.append(" → ");
+        }
+        return sb.toString();
+    }
+
+    private void refreshStatus() {
+        status.setText("当前源: " + queryPort());
     }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_MENU) { go("next", -1); return true; }
+        if (keyCode == KeyEvent.KEYCODE_MENU) { switchTo("HDMI 1", "HDMI 1"); return true; }
         return super.onKeyDown(keyCode, event);
     }
 }

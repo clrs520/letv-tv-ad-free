@@ -1,0 +1,7 @@
+警告: [options] 未与 -source 8 一起设置引导类路径
+src\com\clrs520\puresource\MainActivity.java:84: 错误: 找不到符号
+            public void run() { ui("已切换到 " + label + " | " + doSwitch(port)); }
+                                ^
+  符号: 方法 ui(String)
+1 个错误
+1 个警告

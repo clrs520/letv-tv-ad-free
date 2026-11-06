@@ -35,7 +35,7 @@ rm -f /data/fastplay/videoscreensaver/* /data/fastplay/videoscreensaver_bak/* 2>
 rm -f /data/data/com.stv.signalsourcemanager/shared_prefs/*cache*.xml
 
 # H) debloat (reversible: pm enable <pkg>)
-BLOAT="cn.tvplay.gunworld com.bajintech.karaok com.letv.lekids com.stv.music com.dangbei.dbmusic.letv.tab com.letv.android.tv.letvlive com.letv.leso com.kuyun.stv.androidtv com.stv.android.videochat com.le.lepay.tv sina.mobile.tianqitongstv com.stv.cdeapk com.stv.litemode com.stv.voice com.letv.tvos.appstore letv.remotemanager com.stv.stvpush com.stv.reportlog com.kookong.tv.livematch tvtests.com.mstar.android.tv com.orbbec.TouchCursor com.stv.helper.service"
+BLOAT="cn.tvplay.gunworld com.bajintech.karaok com.letv.lekids com.stv.music com.dangbei.dbmusic.letv.tab com.letv.android.tv.letvlive com.letv.leso com.kuyun.stv.androidtv com.stv.android.videochat com.le.lepay.tv sina.mobile.tianqitongstv com.stv.cdeapk com.stv.litemode com.stv.voice com.letv.tvos.appstore letv.remotemanager com.stv.stvpush com.stv.reportlog com.kookong.tv.livematch tvtests.com.mstar.android.tv com.orbbec.TouchCursor com.stv.helper.service com.stv.screenflyter com.stv.appdaemon"
 for p in $BLOAT; do pm disable $p >/dev/null 2>&1; done
 pm disable com.stv.appdaemon >/dev/null 2>&1
 pm disable com.stv.signalsourcemanager/.MainActivity >/dev/null 2>&1
