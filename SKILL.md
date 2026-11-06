@@ -126,6 +126,37 @@ Find a root daemon that executes a file from writable storage. On EUI, `/system/
 See `scripts/tvfix.template.sh` for the full hook (boot-ad self-heal, IP/DNS blocking,
 splash/shutdown/screensaver wipes, install-lock enforcement).
 
+## Phase 4b — Desktop replacement (Aerial, `app.orchard.tv`)
+
+The stock LeTV desktop (`com.stv.deskplatform`) is ad-laden and dies with the LeTV cloud.
+Replace it with the **Aerial** launcher (`app.orchard.tv`, v1.85 verified): aerial video
+wallpaper, clock/weather, Apple-TV-style aerial screensaver (`assets/aerials.json`), a clean
+app row that automatically reflects the debloated package list, and a boot self-guard
+(`.guard.RevivalListener` + RECEIVE_BOOT_COMPLETED).
+
+Backup from an already-configured TV, then install anywhere:
+
+```bash
+# on the source TV (the apk lives in /data/app):
+adb shell pm path app.orchard.tv          # /data/app/app.orchard.tv-2/base.apk
+MSYS_NO_PATHCONV=1 adb pull /data/app/app.orchard.tv-2/base.apk aerial.apk
+
+# on the target TV (adb install bypasses the install lock entirely):
+adb install -r aerial.apk
+adb shell "am start -a android.intent.action.MAIN -c android.intent.category.HOME"
+#    the resolver appears → pick Aerial → "always"
+```
+
+Notes:
+- Verify HOME with `adb shell dumpsys window | grep mCurrentFocus` after pressing HOME —
+  it must show `app.orchard.tv/.MainActivity`.
+- If the stock desktop ever hijacks HOME back, re-select via the same chooser, or
+  `pm disable com.stv.deskplatform` (reversible; the remote's 信号源 key is served by the
+  independent `com.stv.signalsourcemanager` and keeps working either way).
+- The launcher label is just "Aerial"; the first HOME press on a fresh EUI may flash the LeTV
+  desktop before the chooser — pick Aerial + always once and it sticks (its boot guard
+  re-asserts it on every boot).
+
 ## Phase 5 — Ad surfaces & telemetry
 
 - Wipe `/data/fastplay/{shutdown,screensaver,videoscreensaver}/*` (stale ad configs).
@@ -166,6 +197,7 @@ a misleading 解析错误 dialog.
 ## Phase 7 — Verify & roll back
 
 - Boot: `getprop mstar.videoadvert.finished` must be `1`.
+- Desktop: pressing HOME must land on `app.orchard.tv/.MainActivity` (dumpsys window mCurrentFocus).
 - Install: full UI flow of a real APK completes.
 - `/system/bin/copy_logs_res.sh` sha256 must equal the stock backup you took first.
 - Rollback = `pm enable <pkg>`, restore `*.bak` files, remove the kdm upgrade dir, unlock the db

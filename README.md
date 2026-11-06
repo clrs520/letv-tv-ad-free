@@ -16,6 +16,7 @@
 | 关机/屏保/开屏广告 | 有 | 全部清理 + 自愈 |
 | 遥测上报 | MMA/秒针/Nielsen 等 14 域名 | 全部拦截 |
 | 第三方安装锁 | "存在安全隐患已禁止安装" | 正常安装流程 |
+| 桌面 | 乐视自带桌面（广告位） | Aerial 第三方桌面（app.orchard.tv，航拍壁纸+屏保） |
 | 预装精简 | 商店/游戏/卡拉OK等后台常驻 | 14+ 包禁用（可逆） |
 
 ## 它是怎么工作的（一句话版）
@@ -33,6 +34,7 @@ scripts/dirtycow.c        freestanding aarch64 Dirty Cow（两线程，带校验
 scripts/build_exploit.sh  NDK 编译 + 推送（-nostdlib，见 SKILL.md 坑 8）
 scripts/make_short_clip.sh  用电视自带 logo+开机音乐合成替换片（ffmpeg）
 scripts/sanitize_tvmaster.py  安装黑名单库净化（token-safe，防 11:1 误伤）
+scripts/setup_launcher.sh   Aerial 第三方桌面备份/安装/HOME 触发
 scripts/tvfix.template.sh 开机钩子模板（八段式，见文件内注释）
 docs/NOTES.md             逆向笔记：广告架构 / 判决链 / 关键路径 / 工具链
 ```
