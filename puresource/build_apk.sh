@@ -9,7 +9,7 @@ KS="${KS:-$USERPROFILE/.android/debug.keystore}"
 
 rm -rf bin && mkdir bin
 javac -encoding UTF-8 -source 8 -target 8 -classpath "$AJ" -d bin src/com/clrs520/puresource/MainActivity.java
-"$BT/aapt.exe" package -f -M AndroidManifest.xml -I "$AJ" -F puresource.unsigned.apk
+"$BT/aapt.exe" package -f -M AndroidManifest.xml -S res -I "$AJ" -F puresource.unsigned.apk
 # the dex entry MUST be named classes.dex at the archive root:
 (cd bin && "$BT/aapt.exe" add ../puresource.unsigned.apk classes.dex)
 "$BT/apksigner.bat" sign --ks "$KS" --ks-pass pass:android --out puresource.apk puresource.unsigned.apk

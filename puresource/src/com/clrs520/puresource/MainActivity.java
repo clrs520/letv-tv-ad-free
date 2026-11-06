@@ -1,6 +1,9 @@
 package com.clrs520.puresource;
 
 import android.app.Activity;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.StateListDrawable;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -79,18 +82,44 @@ public class MainActivity extends Activity {
                              : "当前源: " + CYCLE[i]);
     }
 
+    /** 焦点态高对比: 聚焦=亮蓝底+白描边+▶前缀, 保证遥控器焦点一目了然 */
+    private StateListDrawable btnBg() {
+        GradientDrawable normal = new GradientDrawable();
+        normal.setColor(0xFF232830);
+        normal.setCornerRadius(dp(8));
+        GradientDrawable focused = new GradientDrawable();
+        focused.setColor(0xFF2E7DFF);
+        focused.setCornerRadius(dp(8));
+        focused.setStroke(dp(3), 0xFFFFFFFF);
+        GradientDrawable pressed = new GradientDrawable();
+        pressed.setColor(0xFF1B5EDB);
+        pressed.setCornerRadius(dp(8));
+        StateListDrawable sld = new StateListDrawable();
+        sld.addState(new int[]{android.R.attr.state_focused}, focused);
+        sld.addState(new int[]{android.R.attr.state_pressed}, pressed);
+        sld.addState(new int[]{}, normal);
+        return sld;
+    }
+
     private void addButton(LinearLayout root, final String label, final int target) {
         Button b = new Button(this);
         b.setText(label);
         b.setTextSize(20);
         b.setAllCaps(false);
-        b.setTextColor(0xFFE8EAED);
-        b.setBackgroundColor(0xFF232830);
-        b.setPadding(dp(12), dp(12), dp(12), dp(12));
+        b.setTextColor(0xFFCFCFCF);
+        b.setBackground(btnBg());
+        b.setPadding(dp(16), dp(12), dp(16), dp(12));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dp(58));
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(64));
         lp.topMargin = dp(10);
         b.setLayoutParams(lp);
+        b.setOnFocusChangeListener(new android.view.View.OnFocusChangeListener() {
+            public void onFocusChange(android.view.View v, boolean hasFocus) {
+                b.setText(hasFocus ? "▶  " + label : label);
+                b.setTextColor(hasFocus ? 0xFFFFFFFF : 0xFFCFCFCF);
+                b.setTextSize(hasFocus ? 22 : 20);
+            }
+        });
         b.setOnClickListener(new android.view.View.OnClickListener() {
             public void onClick(android.view.View v) { go(label, target); }
         });
