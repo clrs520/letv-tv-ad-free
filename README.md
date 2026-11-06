@@ -35,6 +35,7 @@ scripts/build_exploit.sh  NDK 编译 + 推送（-nostdlib，见 SKILL.md 坑 8�
 scripts/make_short_clip.sh  用电视自带 logo+开机音乐合成替换片（ffmpeg）
 scripts/sanitize_tvmaster.py  安装黑名单库净化（token-safe，防 11:1 误伤）
 scripts/setup_launcher.sh   Aerial 第三方桌面备份/安装/HOME 触发
+puresource/                 纯净信号源 app（8KB，广播切源，无广告面板）+ build_apk.sh
 scripts/tvfix.template.sh 开机钩子模板（八段式，见文件内注释）
 docs/NOTES.md             逆向笔记：广告架构 / 判决链 / 关键路径 / 工具链
 ```

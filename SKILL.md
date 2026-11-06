@@ -157,6 +157,41 @@ Notes:
   desktop before the chooser — pick Aerial + always once and it sticks (its boot guard
   re-asserts it on every boot).
 
+## Phase 4c — 纯净信号源 app (replace the ad panels entirely)
+
+Key discovery: the EUI signal-source app exports an **unprotected broadcast**
+`eui.intent.action.NEXT_SOURCE` (handled by `SignalGlobalReceiver`): each broadcast
+switches to the NEXT input source with only a minimal source-name overlay — and then
+lands on the **SignalDesktop**, a clean fullscreen input view that contains no ad
+panels at all. The ad panels live only in `MainActivity`.
+
+So a "clean signal source" needs no Mstar API access at all:
+
+1. Keep `com.stv.signalsourcemanager` **enabled** (its receiver does the switching).
+2. Disable ONLY its panel activity (component-level, reversible):
+   `pm disable com.stv.signalsourcemanager/.MainActivity` (as root; note component
+   disable does not show in `pm list packages -d`).
+3. Install the tiny clean switcher (`puresource/` in this repo, ~8 KB, pure code UI):
+   - "下一个信号源" button → fires the broadcast.
+   - Per-source buttons (HDMI1/HDMI2/DTV/ATV/AV) → the app tracks the current source
+     in its own preferences: first press on the source you are watching = calibration;
+     afterwards it fires the broadcast (target-current) times to land directly on the
+     chosen source. If the tracked state ever drifts (e.g. CEC switched sources),
+     press the source you are watching once to re-calibrate.
+4. Remote 信号源 key: it launches the now-disabled MainActivity → key does nothing;
+   users switch via the clean app (or re-enable the component temporarily).
+
+`puresource/build_apk.sh` builds it without gradle (javac + d8 + aapt + apksigner).
+Packaging traps: the dex entry must be named `classes.dex` at the archive ROOT
+(aapt add from the bin directory!), compile with `-encoding UTF-8`, and d8 must be
+given explicit class files (the Windows wrapper chokes on globs).
+
+The crash-dialog forest: EUI's "已停止运行" dialogs keep re-appearing for broken
+pre-existing apps (`com.stv.appdaemon` ships without dex and crash-loops ~5×/second
+from boot — disable AND hide it via the root payload; `pm disable` alone does not
+stop the loop). Their dialogs also mask your own test screens — dismiss before
+screenshotting.
+
 ## Phase 5 — Ad surfaces & telemetry
 
 - Wipe `/data/fastplay/{shutdown,screensaver,videoscreensaver}/*` (stale ad configs).
