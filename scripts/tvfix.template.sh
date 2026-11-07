@@ -3,22 +3,24 @@
 # Sections A/E/F/H/I run synchronously (fast, no network/firewall).
 # Section J is detached (network watchdog: iptables + DNS re-resolve every 10 min).
 
-# A) boot ad self-heal: 7 fastplay slots + /tvconfig fallback must equal $S
+# A) boot ad self-heal: EVERY slot (any count/name) + adconf + tvconfig fallback
 S=/data/local/tmp/short2.ts
 M=$(md5sum $S | cut -d' ' -f1)
-[ -d /data/fastplay/ordinary ] || { echo no-fastplay-yet; }
-for i in 1 2 3 4 5 6 7; do
-  F=/data/fastplay/ordinary/ad_$i.ts
-  [ -f "$F" ] || continue
-  C=$(md5sum $F 2>/dev/null | cut -d' ' -f1)
-  if [ "$C" != "$M" ]; then
-    cp $S $F
-    sed -i "s/<md5>[a-f0-9]*</<md5>$M</" /data/fastplay/ordinary/ad_$i.xml
-    sed -i "s/<duration>[0-9]*</<duration>1</" /data/fastplay/ordinary/ad_$i.xml
-  fi
-done
-ls /data/fastplay/ordinary/ad_*.ts >/dev/null 2>&1 && chmod 644 /data/fastplay/ordinary/ad_*.ts 2>/dev/null
-[ -f /data/fastplay/ordinary/ad_2.xml ] && cp /data/fastplay/ordinary/ad_2.xml /data/fastplay/adconf.xml 2>/dev/null
+D=/data/fastplay/ordinary
+if [ -d $D ]; then
+  for F in $D/*.ts; do
+    [ -f "$F" ] || continue
+    C=$(md5sum "$F" 2>/dev/null | cut -d' ' -f1)
+    [ "$C" = "$M" ] && continue
+    cp $S "$F"; chmod 644 "$F"
+  done
+  for F in $D/*.xml; do
+    [ -f "$F" ] || continue
+    sed -i "s/<md5>[a-f0-9]*</<md5>$M</" "$F" 2>/dev/null
+    sed -i "s/<duration>[0-9]*</<duration>1</" "$F" 2>/dev/null
+  done
+  [ -f $D/ad_2.xml ] && cp $D/ad_2.xml /data/fastplay/adconf.xml 2>/dev/null
+fi
 T=/tvconfig/video.ts
 C=$(md5sum $T 2>/dev/null | cut -d' ' -f1)
 if [ "$C" != "$M" ]; then
@@ -73,7 +75,7 @@ chmod 755 /data/media/kdmConfig/upgrade/update.sh) &
 #    mandatory: there is no standalone nslookup on EUI.
 (
   sleep 45
-  DOMAINS="stargazer-scloud.cp21.ott.cibntv.net picture-scloud.cp21.ott.cibntv.net i3.img.cp21.ott.cibntv.net admaster.com.cn lndata.com miaozhen.com irs01.com cr-nielsen.com nielsenccdata.com imrworldwide.com gridsumdissector.com reachmax.cn tanx.com serving-sys.com doubleclick.net ufs2.cn ulmdb.cn"
+  DOMAINS="stargazer-scloud.cp21.ott.cibntv.net picture-scloud.cp21.ott.cibntv.net i3.img.cp21.ott.cibntv.net g3com.cp21.ott.cibntv.net admaster.com.cn lndata.com miaozhen.com irs01.com cr-nielsen.com nielsenccdata.com imrworldwide.com gridsumdissector.com reachmax.cn tanx.com serving-sys.com doubleclick.net ufs2.cn ulmdb.cn"
   STATIC="111.31.3.239 117.180.232.232 117.180.232.233 111.10.52.132 111.10.52.133"
   apply_rules() {
     for ip in $STATIC; do
@@ -98,11 +100,12 @@ chmod 755 /data/media/kdmConfig/upgrade/update.sh) &
     setprop debug.screen.state 0 2>/dev/null
     # fastplay quick re-check (cheap): slots must match the clean clip
     M2=$(md5sum /data/local/tmp/short2.ts 2>/dev/null | cut -d' ' -f1)
-    for i in 1 2 3 4 5 6 7; do
-      C2=$(md5sum /data/fastplay/ordinary/ad_$i.ts 2>/dev/null | cut -d' ' -f1)
+    for F2 in /data/fastplay/ordinary/*.ts; do
+      [ -f "$F2" ] || continue
+      C2=$(md5sum "$F2" 2>/dev/null | cut -d' ' -f1)
       if [ "$C2" != "$M2" ]; then
-        cp /data/local/tmp/short2.ts /data/fastplay/ordinary/ad_$i.ts
-        chmod 644 /data/fastplay/ordinary/ad_$i.ts
+        cp /data/local/tmp/short2.ts "$F2"
+        chmod 644 "$F2"
       fi
     done
   }
