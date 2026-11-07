@@ -40,8 +40,8 @@ rm -f /data/data/com.stv.signalsourcemanager/shared_prefs/*cache*.xml
 BLOAT="cn.tvplay.gunworld com.bajintech.karaok com.letv.lekids com.stv.music com.dangbei.dbmusic.letv.tab com.letv.android.tv.letvlive com.letv.leso com.kuyun.stv.androidtv com.stv.android.videochat com.le.lepay.tv sina.mobile.tianqitongstv com.stv.cdeapk com.stv.litemode com.stv.voice com.letv.tvos.appstore letv.remotemanager com.stv.stvpush com.stv.reportlog com.kookong.tv.livematch tvtests.com.mstar.android.tv com.orbbec.TouchCursor com.stv.helper.service"
 for p in $BLOAT; do pm disable $p >/dev/null 2>&1; done
 # 红线: screenflyter(HOME锚点) 与 appdaemon(开机引导,出厂版) 一律不碰
-pm disable com.stv.signalsourcemanager/.MainActivity >/dev/null 2>&1
-pm disable com.stv.signalsourcemanager/com.stv.signalsourcemanager.MainActivity >/dev/null 2>&1
+# 红线: signalsourcemanager 的 MainActivity 不可禁用——广播切源必须由它承载
+# (禁用后 SignalGlobalReceiver startActivity 崩溃, 切源失效)
 
 # I) install-lock: sanitize then lock the tvmaster policy db root-readonly
 F=/data/data/com.stv.helper.service/databases/tvmaster.db
