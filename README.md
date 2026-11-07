@@ -97,6 +97,47 @@ scripts/build_exploit.sh <TV_IP>:5555
 
 详细步骤、每一步的验证方法和全部已知陷阱都在 **[SKILL.md](SKILL.md)**。
 
+## 🤖 配合 AI Agent 一键操作（本项目的正确打开方式）
+
+`SKILL.md` 是**专为 AI Agent 写的作业手册**——你不需要看懂 Dirty Cow，把仓库交给
+一个能执行命令的 Agent，它就会照手册安全地完成全程。本项目从体检到救砖的全部
+实战（包括那次变砖事故的抢救）都是由 Agent 执行的，手册里的每条结论都是实战沉淀。
+
+### 支持的 Agent
+
+| Agent | 用法 |
+|---|---|
+| **ZCode** | 原生支持：本仓库即按其 skill 规范编写，装完直接说"用 letv-tv-ad-free 处理我的电视" |
+| **Claude Code** | 把仓库复制到 `~/.claude/skills/letv-tv-ad-free/` |
+| **豆包电脑版 / WorkBuddy 等** | 无 skill 机制也行：让 Agent 读取仓库里的 `SKILL.md` 并按其执行 |
+
+### 安装 skill（ZCode 为例）
+
+```bash
+git clone https://github.com/clrs520/letv-tv-ad-free.git
+mkdir -p ~/.zcode/skills
+cp -r letv-tv-ad-free ~/.zcode/skills/
+```
+
+电脑需预装：`adb`（platform-tools）+ Android NDK（Agent 编译提权工具时调用）。
+
+### 一键操作示例（直接对 Agent 说人话）
+
+- 「连接 192.168.x.x:5555，按 skill 体检这台电视」
+- 「把开机广告替换成 0.4 秒，做好自愈」
+- 「电视上有个应用叫 xxx，先查身份和依赖，再决定禁不禁」
+- 「当贝市场装上，乐视商店禁掉」
+- 「信号源切到 HDMI 2」
+
+Agent 会按 SKILL.md 的 Phase 0→7 执行：**先只读体检、每步验证、把 Scar 表里的坑
+全部避开**——包括那条最重要红线：永远不碰会变砖的系统配置文件。
+
+### 给 Agent 主人的三条安全须知
+
+1. **先体检后动手**：SKILL.md 的 Phase 0 就是为此设计的，让 Agent 从只读侦察开始
+2. **每步要验证**：root 载荷的每一步都让它汇报证据（COW-OK / md5 / dumpsys 输出）
+3. **Scar 表是红线清单**：如果 Agent 提议做表里列过的操作，拒绝它
+
 ## 📱 支持机型
 
 | 状态 | 机型 |

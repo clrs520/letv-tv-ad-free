@@ -13,6 +13,11 @@ user build, SELinux **Disabled**, no root, 2026-11.
 
 Everything happens on `/data` (+ one read-only-locked file). `/system` is **never** modified.
 
+**How to run this skill**: give the agent the TV IP (`192.168.x.x:5555`) and let it follow
+the phases in order — Phase 0 is a read-only health check, every later phase has its own
+verification step. The agent needs `adb` + Android NDK on the host. It must refuse any
+action listed in the Scars table at the bottom.
+
 ## Hard constraints learned the hard way (read first)
 
 1. **Never remount /system read-write.** On these TVs `mount -o remount,rw /system` instantly
