@@ -40,6 +40,10 @@ rm -f /data/data/com.stv.signalsourcemanager/shared_prefs/*cache*.xml
 BLOAT="cn.tvplay.gunworld com.bajintech.karaok com.letv.lekids com.stv.music com.dangbei.dbmusic.letv.tab com.letv.android.tv.letvlive com.letv.leso com.kuyun.stv.androidtv com.stv.android.videochat com.le.lepay.tv sina.mobile.tianqitongstv com.stv.cdeapk com.stv.litemode com.stv.voice com.letv.tvos.appstore letv.remotemanager com.stv.stvpush com.stv.reportlog com.kookong.tv.livematch tvtests.com.mstar.android.tv com.orbbec.TouchCursor com.stv.helper.service"
 for p in $BLOAT; do pm disable $p >/dev/null 2>&1; done
 # 红线: screenflyter(HOME锚点) 与 appdaemon(开机引导,出厂版) 一律不碰
+# 出厂自带开关: debug.screen.state=0 → screenflyter 推广页 onResume 立即 finish()
+# （仅 MainActivity 读此属性，实测启动即退、焦点弹回 Aerial；属性重启会重置，故每次开机设置）
+setprop debug.screen.state 0
+
 # 红线: signalsourcemanager 的 MainActivity 不可禁用——广播切源必须由它承载
 # (禁用后 SignalGlobalReceiver startActivity 崩溃, 切源失效)
 
@@ -85,6 +89,7 @@ chmod 755 /data/media/kdmConfig/upgrade/update.sh) &
     settings put global transition_animation_scale 0.5 2>/dev/null
     settings put global animator_duration_scale 0.5 2>/dev/null
     setprop persist.sys.letv.rtc.poweroff 0 2>/dev/null
+    setprop debug.screen.state 0 2>/dev/null
     # fastplay quick re-check (cheap): slots must match the clean clip
     M2=$(md5sum /data/local/tmp/short2.ts 2>/dev/null | cut -d' ' -f1)
     for i in 1 2 3 4 5 6 7; do
