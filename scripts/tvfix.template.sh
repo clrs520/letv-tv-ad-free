@@ -35,8 +35,12 @@ rm -f /data/fastplay/videoscreensaver/* /data/fastplay/videoscreensaver_bak/* 2>
 rm -f /data/data/com.stv.signalsourcemanager/shared_prefs/*cache*.xml
 
 # H) debloat (reversible: pm enable <pkg>)
-BLOAT="cn.tvplay.gunworld com.bajintech.karaok com.letv.lekids com.stv.music com.dangbei.dbmusic.letv.tab com.letv.android.tv.letvlive com.letv.leso com.kuyun.stv.androidtv com.stv.android.videochat com.le.lepay.tv sina.mobile.tianqitongstv com.stv.cdeapk com.stv.litemode com.stv.voice com.letv.tvos.appstore letv.remotemanager com.stv.stvpush com.stv.reportlog com.kookong.tv.livematch tvtests.com.mstar.android.tv com.orbbec.TouchCursor com.stv.helper.service com.stv.screenflyter com.stv.appdaemon"
+BLOAT="cn.tvplay.gunworld com.bajintech.karaok com.letv.lekids com.stv.music com.dangbei.dbmusic.letv.tab com.letv.android.tv.letvlive com.letv.leso com.kuyun.stv.androidtv com.stv.android.videochat com.le.lepay.tv sina.mobile.tianqitongstv com.stv.cdeapk com.stv.litemode com.stv.voice com.letv.tvos.appstore letv.remotemanager com.stv.stvpush com.stv.reportlog com.kookong.tv.livematch tvtests.com.mstar.android.tv com.orbbec.TouchCursor com.stv.helper.service"
 for p in $BLOAT; do pm disable $p >/dev/null 2>&1; done
+# 守护二包: screenflyter=唯一 HOME 锚点必须启用; appdaemon=APK 缺 dex 崩溃循环必须锁死
+pm enable com.stv.screenflyter >/dev/null 2>&1
+pm hide com.stv.appdaemon >/dev/null 2>&1
+pm disable com.stv.appdaemon >/dev/null 2>&1
 pm disable com.stv.appdaemon >/dev/null 2>&1
 pm disable com.stv.signalsourcemanager/.MainActivity >/dev/null 2>&1
 pm disable com.stv.signalsourcemanager/com.stv.signalsourcemanager.MainActivity >/dev/null 2>&1
@@ -74,6 +78,15 @@ chmod 755 /data/media/kdmConfig/upgrade/update.sh) &
         iptables -I OUTPUT -d $ip -j REJECT 2>/dev/null
       done
     done
+    # settings self-heal: screenflyter resets these at boot; previous agent's suppressions
+    settings put secure screensaver_enabled 0 2>/dev/null
+    settings put secure screensaver_activate_on_sleep 0 2>/dev/null
+    settings put secure screensaver_activate_on_dock 0 2>/dev/null
+    settings put system screen_off_timeout 3600000 2>/dev/null
+    settings put global window_animation_scale 0.5 2>/dev/null
+    settings put global transition_animation_scale 0.5 2>/dev/null
+    settings put global animator_duration_scale 0.5 2>/dev/null
+    setprop persist.sys.letv.rtc.poweroff 0 2>/dev/null
     # fastplay quick re-check (cheap): slots must match the clean clip
     M2=$(md5sum /data/local/tmp/short2.ts 2>/dev/null | cut -d' ' -f1)
     for i in 1 2 3 4 5 6 7; do
