@@ -157,40 +157,29 @@ Notes:
   desktop before the chooser — pick Aerial + always once and it sticks (its boot guard
   re-asserts it on every boot).
 
-## Phase 4c — 纯净信号源 app (replace the ad panels entirely)
+## Phase 4c — Signal source page: what works and what is a trap
 
-Key discovery: the EUI signal-source app exports an **unprotected broadcast**
-`eui.intent.action.NEXT_SOURCE` (handled by `SignalGlobalReceiver`): each broadcast
-switches to the NEXT input source with only a minimal source-name overlay — and then
-lands on the **SignalDesktop**, a clean fullscreen input view that contains no ad
-panels at all. The ad panels live only in `MainActivity`.
+The EUI signal-source page (com.stv.signalsourcemanager) embeds ad panels
+(霸屏节目榜单 / 热门推荐). Findings from decompiling 2237 classes:
 
-So a "clean signal source" needs no Mstar API access at all:
-
-1. Keep `com.stv.signalsourcemanager` **enabled** (its receiver does the switching).
-2. Disable ONLY its panel activity (component-level, reversible):
-   `pm disable com.stv.signalsourcemanager/.MainActivity` (as root; note component
-   disable does not show in `pm list packages -d`).
-3. Install the tiny clean switcher (`puresource/` in this repo, ~8 KB, pure code UI):
-   - "下一个信号源" button → fires the broadcast.
-   - Per-source buttons (HDMI1/HDMI2/DTV/ATV/AV) → the app tracks the current source
-     in its own preferences: first press on the source you are watching = calibration;
-     afterwards it fires the broadcast (target-current) times to land directly on the
-     chosen source. If the tracked state ever drifts (e.g. CEC switched sources),
-     press the source you are watching once to re-calibrate.
-4. Remote 信号源 key: it launches the now-disabled MainActivity → key does nothing;
-   users switch via the clean app (or re-enable the component temporarily).
-
-`puresource/build_apk.sh` builds it without gradle (javac + d8 + aapt + apksigner).
-Packaging traps: the dex entry must be named `classes.dex` at the archive ROOT
-(aapt add from the bin directory!), compile with `-encoding UTF-8`, and d8 must be
-given explicit class files (the Windows wrapper chokes on globs).
-
-The crash-dialog forest: EUI's "已停止运行" dialogs keep re-appearing for broken
-pre-existing apps (`com.stv.appdaemon` ships without dex and crash-loops ~5×/second
-from boot — disable AND hide it via the root payload; `pm disable` alone does not
-stop the loop). Their dialogs also mask your own test screens — dismiss before
-screenshotting.
+- The panels are **unconditionally hardcoded UI** (HotChannelView.init() calls
+  setVisibility(VISIBLE) in the constructor; four slots initFirstItem..FourthItem
+  are baked in). There is no data/config switch — the skeleton cannot be removed
+  without /system writes (instant-reboot guard). Content suppression
+  (DNS/IP block + cache wipe) is the ceiling: empty skeleton stays, zero ads.
+- Switching sources: the **NEXT_SOURCE broadcast requires MainActivity enabled**.
+  SignalGlobalReceiver.jumpToSignalSource startActivity's MainActivity BEFORE
+  performing the switch; disabling that component makes the receiver throw
+  ActivityNotFoundException and source switching dies entirely. Do NOT disable it.
+- When switched via the broadcast flow, the system lands directly on a clean
+  fullscreen source view (no panels). The panels only render in the desktop
+  preview mode of the page.
+- KEYCODE_TV_INPUT (170) is hijacked by EUI into the same page; there is no
+  native minimal switcher.
+- A standalone switcher app over the broadcast was built and worked mechanically,
+  but was abandoned by the user in favor of the stock page (with dead panels) —
+  keep the stock page enabled, suppress panel content via the watchdog, and let
+  the preview auto-fullscreen handle viewing.
 
 ## Phase 5 — Ad surfaces & telemetry
 
