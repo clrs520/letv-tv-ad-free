@@ -2,3 +2,4 @@ bin/
 *.idsig
 *.unsigned.apk
 javac_out.txt
+_tv_ad_work/
