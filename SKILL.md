@@ -250,3 +250,5 @@ a misleading 解析错误 dialog.
 | `iptables -m string` | hangs the netfilter thread |
 | NDK default build on old bionic | TLS alignment rejection → use `-nostdlib` |
 | Deleting the boot video | hwcomposer waits forever → black screen risk |
+| **Editing `/data/system/packages.xml` (even "validated" XML)** | **PMS dies → system_server crash loop → stuck at logo, no network, no ADB. Only escape = official USB firmware reflash (full data loss). NEVER touch this file; HOME default goes through component approach only** |
+| **pm hide/disable factory `com.stv.appdaemon` after a reflash** | factory version may be the functional boot guide (previous agent red line); only the broken /data updated copy was safe to lock |

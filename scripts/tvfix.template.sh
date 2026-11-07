@@ -6,8 +6,10 @@
 # A) boot ad self-heal: 7 fastplay slots + /tvconfig fallback must equal $S
 S=/data/local/tmp/short2.ts
 M=$(md5sum $S | cut -d' ' -f1)
+[ -d /data/fastplay/ordinary ] || { echo no-fastplay-yet; }
 for i in 1 2 3 4 5 6 7; do
   F=/data/fastplay/ordinary/ad_$i.ts
+  [ -f "$F" ] || continue
   C=$(md5sum $F 2>/dev/null | cut -d' ' -f1)
   if [ "$C" != "$M" ]; then
     cp $S $F
@@ -15,8 +17,8 @@ for i in 1 2 3 4 5 6 7; do
     sed -i "s/<duration>[0-9]*</<duration>1</" /data/fastplay/ordinary/ad_$i.xml
   fi
 done
-chmod 644 /data/fastplay/ordinary/ad_*.ts 2>/dev/null
-cp /data/fastplay/ordinary/ad_2.xml /data/fastplay/adconf.xml 2>/dev/null
+ls /data/fastplay/ordinary/ad_*.ts >/dev/null 2>&1 && chmod 644 /data/fastplay/ordinary/ad_*.ts 2>/dev/null
+[ -f /data/fastplay/ordinary/ad_2.xml ] && cp /data/fastplay/ordinary/ad_2.xml /data/fastplay/adconf.xml 2>/dev/null
 T=/tvconfig/video.ts
 C=$(md5sum $T 2>/dev/null | cut -d' ' -f1)
 if [ "$C" != "$M" ]; then
@@ -37,11 +39,7 @@ rm -f /data/data/com.stv.signalsourcemanager/shared_prefs/*cache*.xml
 # H) debloat (reversible: pm enable <pkg>)
 BLOAT="cn.tvplay.gunworld com.bajintech.karaok com.letv.lekids com.stv.music com.dangbei.dbmusic.letv.tab com.letv.android.tv.letvlive com.letv.leso com.kuyun.stv.androidtv com.stv.android.videochat com.le.lepay.tv sina.mobile.tianqitongstv com.stv.cdeapk com.stv.litemode com.stv.voice com.letv.tvos.appstore letv.remotemanager com.stv.stvpush com.stv.reportlog com.kookong.tv.livematch tvtests.com.mstar.android.tv com.orbbec.TouchCursor com.stv.helper.service"
 for p in $BLOAT; do pm disable $p >/dev/null 2>&1; done
-# 守护二包: screenflyter=唯一 HOME 锚点必须启用; appdaemon=APK 缺 dex 崩溃循环必须锁死
-pm enable com.stv.screenflyter >/dev/null 2>&1
-pm hide com.stv.appdaemon >/dev/null 2>&1
-pm disable com.stv.appdaemon >/dev/null 2>&1
-pm disable com.stv.appdaemon >/dev/null 2>&1
+# 红线: screenflyter(HOME锚点) 与 appdaemon(开机引导,出厂版) 一律不碰
 pm disable com.stv.signalsourcemanager/.MainActivity >/dev/null 2>&1
 pm disable com.stv.signalsourcemanager/com.stv.signalsourcemanager.MainActivity >/dev/null 2>&1
 
