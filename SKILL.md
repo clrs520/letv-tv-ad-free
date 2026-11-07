@@ -64,11 +64,14 @@ opens → **Other Options** → scroll to the bottom → **adb debug** → set *
 **reboot the TV** (required to take effect).
 Backup combo (超摇 remote): 数字键 → VOL− → VOL+ → CH− → CH+ (1 s per key).
 Newer builds may need other factory codes (9705 / 1234 / 0918) if 2580 fails.
-Note `settings get global adb_enabled` reads 0/1 — the toggle lives there.
+Note: the standard `settings get global adb_enabled` may still read **0** while
+network ADB works — the factory toggle drives network adbd through a LeTV-specific
+mechanism, not that setting.
 
 Proceed only if: kernel in 2.6.22–4.8.x (Dirty Cow range), and you own the device.
-Check the *actual* network path first (`svc wifi disable` may be a no-op if the TV is on
-Ethernet — the recommendation block must then use iptables, not WiFi toggling).
+Network note: on our unit (WiFi) `svc wifi disable` did **not** drop the connection —
+EUI ignores or immediately undoes it. Never rely on WiFi toggling; the recommendation
+block uses iptables regardless of link type.
 
 ## Phase 1 — Locate the ad mechanism
 
@@ -175,8 +178,9 @@ Backup from an already-configured TV, then install anywhere:
 
 ```bash
 # on the source TV (the apk lives in /data/app):
-adb shell pm path app.orchard.tv          # /data/app/app.orchard.tv-2/base.apk
-MSYS_NO_PATHCONV=1 adb pull /data/app/app.orchard.tv-2/base.apk aerial.apk
+adb shell pm path app.orchard.tv
+#    → /data/app/app.orchard.tv-<N>/base.apk   (suffix N varies per install — always use pm path)
+MSYS_NO_PATHCONV=1 adb pull "$(adb -s <TV_IP>:5555 shell pm path app.orchard.tv | head -1 | sed 's/package://' | tr -d '')" aerial.apk
 
 # on the target TV (adb install bypasses the install lock entirely):
 adb install -r aerial.apk

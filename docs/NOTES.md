@@ -87,7 +87,8 @@ PackageInstallerActivity (LeTV-modified)
 - Decompilation toolchain on a China network: aliyun maven thin jars
   (baksmali/dexlib2/util/guava/failureaccess/jcommander) run via
   `java -cp ... org.jf.baksmali.Main deodex x.odex -b boot.oat`.
-- `svc wifi disable` is a no-op if the TV is on Ethernet — verify the actual link
-  before drawing conclusions from "no network" tests.
+- The unit is on **WiFi** (no Ethernet), yet `svc wifi disable` still did not drop its
+  connection — EUI ignores/undoes it. Never draw "no network" conclusions from a WiFi
+  toggle; verify with iptables or the router client list.
 - `pm list packages -d` + `dumpsys package <pkg> | grep 'User 0:'` distinguishes
   "disabled" from "uninstalled for user 0" (installed=false).
