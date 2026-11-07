@@ -52,6 +52,15 @@ adb shell getenforce                                                           #
 adb shell "su -c id"                                                           # root? (usually absent)
 ```
 
+### Enable ADB on the TV (EUI — not the Android-phone way)
+
+Remote: press **信号源 (SOURCE)** → type **2580** on the number keys → factory menu
+opens → **Other Options** → scroll to the bottom → **adb debug** → set **on** →
+**reboot the TV** (required to take effect).
+Backup combo (超摇 remote): 数字键 → VOL− → VOL+ → CH− → CH+ (1 s per key).
+Newer builds may need other factory codes (9705 / 1234 / 0918) if 2580 fails.
+Note `settings get global adb_enabled` reads 0/1 — the toggle lives there.
+
 Proceed only if: kernel in 2.6.22–4.8.x (Dirty Cow range), and you own the device.
 Check the *actual* network path first (`svc wifi disable` may be a no-op if the TV is on
 Ethernet — the recommendation block must then use iptables, not WiFi toggling).
