@@ -37,7 +37,7 @@ rm -f /data/fastplay/videoscreensaver/* /data/fastplay/videoscreensaver_bak/* 2>
 rm -f /data/data/com.stv.signalsourcemanager/shared_prefs/*cache*.xml
 
 # H) debloat (reversible: pm enable <pkg>)
-BLOAT="cn.tvplay.gunworld com.bajintech.karaok com.letv.lekids com.stv.music com.dangbei.dbmusic.letv.tab com.letv.android.tv.letvlive com.letv.leso com.kuyun.stv.androidtv com.stv.android.videochat com.le.lepay.tv sina.mobile.tianqitongstv com.stv.cdeapk com.stv.litemode com.stv.voice com.letv.tvos.appstore letv.remotemanager com.stv.stvpush com.stv.reportlog com.kookong.tv.livematch tvtests.com.mstar.android.tv com.orbbec.TouchCursor com.stv.helper.service com.stv.calendar com.stv.feedback com.stv.ucenter com.stv.t2.account com.stv.bootadmanager com.stv.message com.kuyun.common.androidtv com.kuyun.identifer com.stv.reportService com.stv.lap.alitvbuy com.lap.devicescanner com.stv.guider com.stv.downloads com.stv.systemupgrade com.stv.network.diagnotics com.stv.bsp.qccrashhandler com.stv.commonservice"
+BLOAT="cn.tvplay.gunworld com.bajintech.karaok com.letv.lekids com.stv.music com.dangbei.dbmusic.letv.tab com.letv.android.tv.letvlive com.letv.leso com.kuyun.stv.androidtv com.stv.android.videochat com.le.lepay.tv sina.mobile.tianqitongstv com.stv.cdeapk com.stv.litemode com.stv.voice com.letv.tvos.appstore letv.remotemanager com.stv.stvpush com.stv.reportlog com.kookong.tv.livematch tvtests.com.mstar.android.tv com.orbbec.TouchCursor com.stv.helper.service com.stv.calendar com.stv.feedback com.stv.bschannel com.stv.ucenter com.stv.t2.account com.stv.bootadmanager com.stv.message com.kuyun.common.androidtv com.kuyun.identifer com.stv.reportService com.stv.lap.alitvbuy com.lap.devicescanner com.stv.guider com.stv.downloads com.stv.systemupgrade com.stv.network.diagnotics com.stv.bsp.qccrashhandler com.stv.commonservice"
 for p in $BLOAT; do pm disable $p >/dev/null 2>&1; done
 for p in $BLOAT; do
   kill -9 $(grep -l "$p" /proc/[0-9]*/cmdline 2>/dev/null | sed "s|[^0-9]||g") 2>/dev/null
@@ -46,6 +46,9 @@ done
 # 出厂自带开关: debug.screen.state=0 → screenflyter 推广页 onResume 立即 finish()
 # （仅 MainActivity 读此属性，实测启动即退、焦点弹回 Aerial；属性重启会重置，故每次开机设置）
 setprop debug.screen.state 0
+
+# 多屏看看: 仅禁图标入口(MirrorCourseActivity), 乐播投屏服务与播放器保持可用
+pm disable com.stv.smartControl/com.hpplay.media.lebosample.MirrorCourseActivity >/dev/null 2>&1
 
 # 红线: signalsourcemanager 的 MainActivity 不可禁用——广播切源必须由它承载
 # (禁用后 SignalGlobalReceiver startActivity 崩溃, 切源失效)
