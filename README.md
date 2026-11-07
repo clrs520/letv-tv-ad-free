@@ -12,7 +12,9 @@
 | 项目 | 之前 | 之后 |
 |---|---|---|
 | 开机广告 | 15 秒（按日轮播） | 0.44 秒静态 logo 片 |
-| 信号源页 | 霸屏榜单 + 热门推荐占位 | 内容断供 + 每 10 分钟看门狗重拦（面板骨架为硬编码 UI，无法移除） |
+| 信号源页 | 霸屏榜单 + 热门推荐占位 | 原生信号源正常切换，面板内容断供（骨架为硬编码 UI 无法移除） |
+| 开机推广页 | 客厅杂志，需按一次 OK | 出厂调试开关自灭（debug.screen.state=0，零风险） |
+| 乐头条 / 多屏看看 | 随系统预装 | 前者整体禁用，后者仅禁图标（保留手机投屏） |
 | 关机/屏保/开屏广告 | 有 | 全部清理 + 自愈 |
 | 遥测上报 | MMA/秒针/Nielsen 等 14 域名 | 全部拦截 |
 | 第三方安装锁 | "存在安全隐患已禁止安装" | 正常安装流程 |
@@ -35,7 +37,7 @@ scripts/build_exploit.sh  NDK 编译 + 推送（-nostdlib，见 SKILL.md 坑 8�
 scripts/make_short_clip.sh  用电视自带 logo+开机音乐合成替换片（ffmpeg）
 scripts/sanitize_tvmaster.py  安装黑名单库净化（token-safe，防 11:1 误伤）
 scripts/setup_launcher.sh   Aerial 第三方桌面备份/安装/HOME 触发
-puresource/                 纯净信号源 app（8KB，广播切源，无广告面板）+ build_apk.sh
+puresource/                 纯净信号源 app（存档：广播切源可用，但用户最终选择回归原生信号源页）
 scripts/tvfix.template.sh 开机钩子模板（八段式，见文件内注释）
 docs/NOTES.md             逆向笔记：广告架构 / 判决链 / 关键路径 / 工具链
 ```

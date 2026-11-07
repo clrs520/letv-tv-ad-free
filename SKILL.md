@@ -112,6 +112,14 @@ floor — shorter risks the "no video" branch and a black boot. Replace **every*
 plus `/tvconfig/video.ts` (remount it rw, cp, chown system:system, chmod 644, remount ro), fix
 each `ad_N.xml` (`<md5>` → new hash, `<duration>` → clip length), keep `*.bak` of originals.
 
+The boot promo page (客厅杂志, screenflyter's own splash) has a **factory debug switch**:
+`setprop debug.screen.state 0` makes screenflyter's MainActivity `finish()` immediately in
+onResume — the only consumer of this property on the whole box (verified live: activity
+starts and instantly exits, focus bounces back to the launcher). The property resets on
+reboot, so the hook sets it every boot and the watchdog re-asserts it. screenflyter itself
+must **stay enabled** — it is the only app declaring HOME (boot anchor; the factory
+`appdaemon` is the boot guide after a reflash).
+
 ## Phase 4 — Persistence hook (survives reboot, no /system writes)
 
 Find a root daemon that executes a file from writable storage. On EUI, `/system/bin/kdmStart.sh`
@@ -125,6 +133,21 @@ Find a root daemon that executes a file from writable storage. On EUI, `/system/
 
 See `scripts/tvfix.template.sh` for the full hook (boot-ad self-heal, IP/DNS blocking,
 splash/shutdown/screensaver wipes, install-lock enforcement).
+
+Hook rules of thumb (v8+ template):
+- **Debloat via `pm disable`, never `pm uninstall`**: the factory boot-guide app
+  (`com.stv.appdaemon`) holds INSTALL_PACKAGES and reacts to uninstall broadcasts by
+  silently reinstalling ad packages. Disable + `kill -9` is invisible to it.
+- **All iptables/DNS work runs in a detached watchdog** (+45 s after boot, then every
+  10 min): running iptables inside the early-boot hook hangs the netfilter thread while
+  kernel modules load and the rules are silently lost. `busybox nslookup` is mandatory —
+  EUI has no standalone nslookup binary.
+- The watchdog also **re-asserts settings** (`screen_off_timeout`, `screensaver_enabled`,
+  animation scales): screenflyter resets some of them at every boot.
+- Disable depth per app: full `pm disable` for pure content apps (乐头条/bschannel);
+  **launcher-activity-only disable** for apps that host services (多屏看看 =
+  `pm disable com.stv.smartControl/com.hpplay.media.lebosample.MirrorCourseActivity` —
+  icon gone, the hpplay cast engine + player stay alive so phone-side casting works).
 
 ## Phase 4b — Desktop replacement (Aerial, `app.orchard.tv`)
 
@@ -212,7 +235,8 @@ kill -9 $(grep -l com.stv.helper.service /proc/[0-9]*/cmdline 2>/dev/null | sed 
 Unreadable DB → `checkPermission` throws → the installer's catch-all returns "not blacklisted"
 → every install allowed. Root-owned 400 means the cloud can never re-push the blacklist. The
 helper runs fine without the DB (verified, no crash loop). `service check tvmaster.service`
-must report **not found** afterwards.
+may later report **found** again (the helper respawns) — that is harmless as long as the DB
+stays root-locked; the lock is the durable defense, and the hook re-locks at every boot.
 
 Debug traps: disabling the store/daemon does not kill the verdict (the helper hosts it);
 a blocked installer is a zombie task (force-stop before retest); deleting your test APK yields
@@ -223,7 +247,9 @@ a misleading 解析错误 dialog.
 - Boot: `getprop mstar.videoadvert.finished` must be `1`.
 - Desktop: pressing HOME must land on `app.orchard.tv/.MainActivity` (dumpsys window mCurrentFocus).
 - Install: full UI flow of a real APK completes.
-- `/system/bin/copy_logs_res.sh` sha256 must equal the stock backup you took first.
+- `/system/bin/copy_logs_res.sh` hash must equal the stock backup you took first. Use
+  `md5sum` — the TV toolbox has no `sha256sum`; note the hash differs per firmware build
+  even when the 444-byte content is identical (factory V2401 = 468d08ba...).
 - Rollback = `pm enable <pkg>`, restore `*.bak` files, remove the kdm upgrade dir, unlock the db
   (`chown system:system`, `chmod 660`), remove `/data/local/tmp/tvfix.sh`.
 
